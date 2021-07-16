@@ -2,6 +2,7 @@
 
 namespace Rubix\ML\Classifiers;
 
+use Rubix\ML\CrossValidation\Metrics\ScoreInput;
 use Rubix\ML\Learner;
 use Rubix\ML\Verbose;
 use Rubix\ML\Estimator;
@@ -441,13 +442,17 @@ class LogitBoost implements Estimator, Learner, Probabilistic, RanksFeatures, Ve
 
                 $outTest = array_map('Rubix\ML\sigmoid', $zTest);
 
-                $predictions = [];
+                $predictions = $probabilities = [];
 
                 foreach ($outTest as $probability) {
+                    $probabilities[] = [
+                        $classes[0] => 1.0 - $probability,
+                        $classes[1] => $probability,
+                    ];
                     $predictions[] = $probability < 0.5 ? $classes[0] : $classes[1];
                 }
 
-                $score = $this->metric->score($predictions, $testing->labels());
+                $score = $this->metric->score(new ScoreInput($predictions, $testing->labels(), $probabilities));
 
                 $this->scores[$epoch] = $score;
             }
